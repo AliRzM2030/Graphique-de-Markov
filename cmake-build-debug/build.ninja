@@ -79,6 +79,12 @@ build CMakeFiles/untitled4.dir/hasse.c.obj: C_COMPILER__untitled4_unscanned_Debu
   OBJECT_DIR = CMakeFiles\untitled4.dir
   OBJECT_FILE_DIR = CMakeFiles\untitled4.dir
 
+build CMakeFiles/untitled4.dir/matrix.c.obj: C_COMPILER__untitled4_unscanned_Debug C$:/Users/melis/CLionProjects/untitled4/matrix.c || cmake_object_order_depends_target_untitled4
+  DEP_FILE = CMakeFiles\untitled4.dir\matrix.c.obj.d
+  FLAGS = -g -std=gnu11 -fdiagnostics-color=always
+  OBJECT_DIR = CMakeFiles\untitled4.dir
+  OBJECT_FILE_DIR = CMakeFiles\untitled4.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target untitled4
@@ -87,7 +93,7 @@ build CMakeFiles/untitled4.dir/hasse.c.obj: C_COMPILER__untitled4_unscanned_Debu
 #############################################
 # Link the executable untitled4.exe
 
-build untitled4.exe: C_EXECUTABLE_LINKER__untitled4_Debug CMakeFiles/untitled4.dir/main.c.obj CMakeFiles/untitled4.dir/liste_adjacence.c.obj CMakeFiles/untitled4.dir/stack.c.obj CMakeFiles/untitled4.dir/tarjan.c.obj CMakeFiles/untitled4.dir/hasse.c.obj
+build untitled4.exe: C_EXECUTABLE_LINKER__untitled4_Debug CMakeFiles/untitled4.dir/main.c.obj CMakeFiles/untitled4.dir/liste_adjacence.c.obj CMakeFiles/untitled4.dir/stack.c.obj CMakeFiles/untitled4.dir/tarjan.c.obj CMakeFiles/untitled4.dir/hasse.c.obj CMakeFiles/untitled4.dir/matrix.c.obj
   FLAGS = -g
   LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\untitled4.dir

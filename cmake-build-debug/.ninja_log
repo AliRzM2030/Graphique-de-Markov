@@ -2,3 +2,8 @@
 22	367	7854673144376421	CMakeFiles/untitled4.dir/main.c.obj	246f9b6f33f0b731
 43	259	7854370391940596	CMakeFiles/untitled4.dir/liste_adjacence.c.obj	8f9bf60b094ad30d
 367	887	7854673147823443	untitled4.exe	d2189cbf26406198
+25	295	7856403888422448	CMakeFiles/untitled4.dir/main.c.obj	246f9b6f33f0b731
+35	318	7856403888524272	CMakeFiles/untitled4.dir/stack.c.obj	884f9b7e7ca1841f
+55	324	7856403888725151	CMakeFiles/untitled4.dir/hasse.c.obj	c406900521de70b7
+62	336	7856403888792830	CMakeFiles/untitled4.dir/matrix.c.obj	eabbe5f7cf5a8d82
+46	345	7856403888630564	CMakeFiles/untitled4.dir/tarjan.c.obj	7897e26e7b5ae9bc

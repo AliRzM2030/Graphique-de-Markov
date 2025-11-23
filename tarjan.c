@@ -4,6 +4,7 @@
 #include "tarjan.h"
 #include "stack.h"
 #include "hasse.h"
+#include "matrix.h"
 
 t_tarjan_vertex* initTarjanVertices(List_adj G) {
     t_tarjan_vertex* V = (t_tarjan_vertex*)malloc(G.taille * sizeof(t_tarjan_vertex));
