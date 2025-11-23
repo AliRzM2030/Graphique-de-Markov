@@ -187,30 +187,30 @@ t_matrix adjacencyListToMatrix(const t_adj_list *list, int n) {
 /* -------------------------- Sous-matrice -------------------------- */
 
 t_matrix subMatrix(t_matrix matrix, t_partition part, int compo_index) {
-    int n = matrix.rows;
+    if (compo_index < 0 || compo_index >= part.nb_classes) {
+        fprintf(stderr, "subMatrix: composante invalide\n");
+        return createZeroMatrix(0);
+    }
 
-    int count = 0;
-    for (int i = 0; i < n; i++)
-        if (part.part_of[i] == compo_index)
-            count++;
+    t_classe C = part.classes[compo_index];
 
-    t_matrix sub = createZeroMatrix(count);
+    int k = C.nb_vertices;  // taille de la composante
+    t_matrix sub = createZeroMatrix(k);
     if (!sub.data) return sub;
 
-    int *map = malloc(count * sizeof(int));
-    int idx = 0;
-    for (int i = 0; i < n; i++)
-        if (part.part_of[i] == compo_index)
-            map[idx++] = i;
+    // vertices[i] = numéro du sommet dans le graphe global
+    int *verts = C.vertices;
 
-    for (int a = 0; a < count; a++)
-        for (int b = 0; b < count; b++)
-            sub.data[a][b] = matrix.data[map[a]][map[b]];
+    for (int i = 0; i < k; i++) {
+        for (int j = 0; j < k; j++) {
+            int gi = verts[i];  // sommet global
+            int gj = verts[j];  // sommet global
+            sub.data[i][j] = matrix.data[gi][gj];
+        }
+    }
 
-    free(map);
     return sub;
 }
-
 /* -------------------------- GCD + période -------------------------- */
 
 int gcd(int *vals, int n) {
