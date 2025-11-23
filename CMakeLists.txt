@@ -8,4 +8,5 @@ add_executable(untitled4
         stack.c
         tarjan.c
         hasse.c
+        matrix.c
 )
