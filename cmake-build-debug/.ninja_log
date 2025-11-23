@@ -1,7 +1,4 @@
 # ninja log v6
-2	217	7854366790136703	CMakeFiles/untitled4.dir/main.c.obj	246f9b6f33f0b731
-34	186	7854370391850724	CMakeFiles/untitled4.dir/main.c.obj	246f9b6f33f0b731
-43	259	7854370391940596	CMakeFiles/untitled4.dir/liste_adjacence.c.obj	8f9bf60b094ad30d
-259	695	7854370394102084	untitled4.exe	d2189cbf26406198
 22	367	7854673144376421	CMakeFiles/untitled4.dir/main.c.obj	246f9b6f33f0b731
+43	259	7854370391940596	CMakeFiles/untitled4.dir/liste_adjacence.c.obj	8f9bf60b094ad30d
 367	887	7854673147823443	untitled4.exe	d2189cbf26406198

@@ -3,6 +3,7 @@
 #include <string.h>
 #include "tarjan.h"
 #include "stack.h"
+#include "hasse.h"
 
 t_tarjan_vertex* initTarjanVertices(List_adj G) {
     t_tarjan_vertex* V = (t_tarjan_vertex*)malloc(G.taille * sizeof(t_tarjan_vertex));
@@ -93,5 +94,56 @@ void printPartition(t_partition part) {
             printf("%d ", part.classes[i].vertices[j]);
         }
         printf("\n");
+    }
+}
+
+
+//OPTIONNEL :
+// ----------------------------------------------------------
+// SUPPRESSION DES REDONDANCES DANS UNE CLASSE TARJAN
+// ----------------------------------------------------------
+
+#include <stdbool.h>
+
+// Supprime les doublons dans une classe (C1, C2, ...)
+// On garde l'ordre des sommets
+void removeDuplicatesFromClass(t_classe* c) {
+    if (c->nb_vertices <= 1) return;
+
+    int* unique = malloc(c->nb_vertices * sizeof(int));
+    int count = 0;
+
+    for (int i = 0; i < c->nb_vertices; i++) {
+        int v = c->vertices[i];
+        bool exists = false;
+
+        // Vérifier si déjà dans "unique"
+        for (int j = 0; j < count; j++) {
+            if (unique[j] == v) {
+                exists = true;
+                break;
+            }
+        }
+
+        if (!exists) {
+            unique[count++] = v;
+        }
+    }
+
+    // Réécriture propre du tableau
+    free(c->vertices);
+    c->vertices = malloc(count * sizeof(int));
+    for (int i = 0; i < count; i++) {
+        c->vertices[i] = unique[i];
+    }
+
+    c->nb_vertices = count;
+    free(unique);
+}
+
+// Supprime les redondances dans toutes les classes de la partition
+void cleanPartition(t_partition* part) {
+    for (int i = 0; i < part->nb_classes; i++) {
+        removeDuplicatesFromClass(&(part->classes[i]));
     }
 }

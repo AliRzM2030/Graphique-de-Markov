@@ -25,6 +25,8 @@ typedef struct {
     int nb_classes;
 } t_partition;
 
+
+
 t_tarjan_vertex* initTarjanVertices(List_adj G);
 
 void tarjanRecursive(int v, List_adj G, t_tarjan_vertex* V, Stack* P,

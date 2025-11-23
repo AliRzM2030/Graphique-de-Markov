@@ -61,6 +61,24 @@ build CMakeFiles/untitled4.dir/liste_adjacence.c.obj: C_COMPILER__untitled4_unsc
   OBJECT_DIR = CMakeFiles\untitled4.dir
   OBJECT_FILE_DIR = CMakeFiles\untitled4.dir
 
+build CMakeFiles/untitled4.dir/stack.c.obj: C_COMPILER__untitled4_unscanned_Debug C$:/Users/melis/CLionProjects/untitled4/stack.c || cmake_object_order_depends_target_untitled4
+  DEP_FILE = CMakeFiles\untitled4.dir\stack.c.obj.d
+  FLAGS = -g -std=gnu11 -fdiagnostics-color=always
+  OBJECT_DIR = CMakeFiles\untitled4.dir
+  OBJECT_FILE_DIR = CMakeFiles\untitled4.dir
+
+build CMakeFiles/untitled4.dir/tarjan.c.obj: C_COMPILER__untitled4_unscanned_Debug C$:/Users/melis/CLionProjects/untitled4/tarjan.c || cmake_object_order_depends_target_untitled4
+  DEP_FILE = CMakeFiles\untitled4.dir\tarjan.c.obj.d
+  FLAGS = -g -std=gnu11 -fdiagnostics-color=always
+  OBJECT_DIR = CMakeFiles\untitled4.dir
+  OBJECT_FILE_DIR = CMakeFiles\untitled4.dir
+
+build CMakeFiles/untitled4.dir/hasse.c.obj: C_COMPILER__untitled4_unscanned_Debug C$:/Users/melis/CLionProjects/untitled4/hasse.c || cmake_object_order_depends_target_untitled4
+  DEP_FILE = CMakeFiles\untitled4.dir\hasse.c.obj.d
+  FLAGS = -g -std=gnu11 -fdiagnostics-color=always
+  OBJECT_DIR = CMakeFiles\untitled4.dir
+  OBJECT_FILE_DIR = CMakeFiles\untitled4.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target untitled4
@@ -69,7 +87,7 @@ build CMakeFiles/untitled4.dir/liste_adjacence.c.obj: C_COMPILER__untitled4_unsc
 #############################################
 # Link the executable untitled4.exe
 
-build untitled4.exe: C_EXECUTABLE_LINKER__untitled4_Debug CMakeFiles/untitled4.dir/main.c.obj CMakeFiles/untitled4.dir/liste_adjacence.c.obj
+build untitled4.exe: C_EXECUTABLE_LINKER__untitled4_Debug CMakeFiles/untitled4.dir/main.c.obj CMakeFiles/untitled4.dir/liste_adjacence.c.obj CMakeFiles/untitled4.dir/stack.c.obj CMakeFiles/untitled4.dir/tarjan.c.obj CMakeFiles/untitled4.dir/hasse.c.obj
   FLAGS = -g
   LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\untitled4.dir

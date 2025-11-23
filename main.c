@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "liste_adjacence.h"
 #include "tarjan.h"
-
+#include "hasse.h"
 int main() {
 
     char filename[100];
@@ -23,5 +23,21 @@ int main() {
     printf("\n--- Tarjan ---\n");
     t_partition P = tarjan(G);
     printPartition(P);
-    return 0;
+
+    t_partition Pa = tarjan(G);
+    printPartition(Pa);
+
+    // Construire les liens entre classes
+    t_link_array links;
+    initLinkArray(&links, 8);
+
+    buildClassLinks(G, Pa, &links);
+
+    // Optionnel :
+    removeTransitiveLinks(&links);
+
+    // Export Hasse
+    exportHasseToMermaid("hasse_mermaid.txt", Pa, &links);
+
+    freeLinkArray(&links);
 }
