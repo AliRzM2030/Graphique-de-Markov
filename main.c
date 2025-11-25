@@ -227,7 +227,7 @@ int main() {
 
         t_matrix sub = subMatrix(M, part, c);
         int per = getPeriod(sub);
-        printf("Période : %d\n", per);
+        printf("Periode : %d\n", per);
 
         t_matrix Mk_sub = matrixPower(&sub, 20);
         printMatrix(&Mk_sub, "Distribution stationnaire approx :");
