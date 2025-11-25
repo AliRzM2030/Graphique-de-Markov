@@ -106,3 +106,50 @@ void exportHasseToMermaid(const char *filename,
 
     fclose(f);
 }
+
+// ----------------------------------------------------------
+// SUPPRESSION DES LIENS TRANSITIFS DANS UN DIAGRAMME DE HASSE
+// ----------------------------------------------------------
+
+static int linkDirectExists(t_link_array *arr, int a, int b) {
+    for (int i = 0; i < arr->size; i++) {
+        if (arr->data[i].from == a && arr->data[i].to == b)
+            return 1;
+    }
+    return 0;
+}
+
+static int linkTransitExists(t_link_array *arr, int a, int b) {
+    // existe-t-il un chemin a -> k -> b ?
+    for (int i = 0; i < arr->size; i++) {
+        int k = arr->data[i].to;
+        if (arr->data[i].from == a && k != b) {
+            // si a -> k puis k -> b
+            if (linkDirectExists(arr, k, b))
+                return 1;
+        }
+    }
+    return 0;
+}
+
+void removeTransitiveLinks(t_link_array *p_link_array) {
+    if (!p_link_array || p_link_array->size <= 1)
+        return;
+
+    t_link_array cleaned;
+    initLinkArray(&cleaned, p_link_array->size);
+
+    for (int i = 0; i < p_link_array->size; i++) {
+        int a = p_link_array->data[i].from;
+        int b = p_link_array->data[i].to;
+
+        // Si le lien est transitif, on NE LE GARDE PAS
+        if (!linkTransitExists(p_link_array, a, b)) {
+            addLink(&cleaned, a, b);
+        }
+    }
+
+    // remplace l'ancien array
+    free(p_link_array->data);
+    *p_link_array = cleaned;
+}

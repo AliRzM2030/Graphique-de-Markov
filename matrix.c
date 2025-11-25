@@ -3,8 +3,43 @@
 #include <string.h>
 #include <math.h>
 #include "matrix.h"
+#include "liste_adjacence.h"
 
-/* -------------------------- Alloc interne -------------------------- */
+/* ----------------------------------------------------
+ *  Conversion List_adj → tableau t_adj_list (pour matrices)
+ * ---------------------------------------------------- */
+
+t_adj_list* convertListAdj_to_adjList(List_adj G) {
+    t_adj_list *list = malloc(G.taille * sizeof(t_adj_list));
+
+    for (int i = 0; i < G.taille; i++) {
+        int degree = 0;
+        Cell *c = G.tab[i].head;
+
+        while (c) {
+            degree++;
+            c = c->next;
+        }
+
+        list[i].degree = degree;
+        list[i].edges = malloc(degree * sizeof(t_adj_edge));
+
+        c = G.tab[i].head;
+        int k = 0;
+        while (c) {
+            list[i].edges[k].to = c->sommet_d_arrive - 1;
+            list[i].edges[k].prob = c->probabilite;
+            k++;
+            c = c->next;
+        }
+    }
+
+    return list;
+}
+
+/* ---------------------------------------------- */
+/*   Allocation interne                            */
+/* ---------------------------------------------- */
 
 static double **alloc2D(int n) {
     if (n <= 0) return NULL;
@@ -24,7 +59,9 @@ static double **alloc2D(int n) {
     return ptr;
 }
 
-/* -------------------------- Création -------------------------- */
+/* ---------------------------------------------- */
+/*   Création matrices                             */
+/* ---------------------------------------------- */
 
 t_matrix createEmptyMatrix(int n) {
     t_matrix M;
@@ -33,8 +70,8 @@ t_matrix createEmptyMatrix(int n) {
     M.data = alloc2D(n);
 
     if (!M.data) {
+        fprintf(stderr, "Erreur allocation matrice\n");
         M.rows = M.cols = 0;
-        fprintf(stderr, "createEmptyMatrix: alloc failed\n");
     }
     return M;
 }
@@ -51,81 +88,64 @@ void freeMatrix(t_matrix *m) {
     free(m->data[0]);
     free(m->data);
     m->data = NULL;
-    m->rows = m->cols = 0;
 }
 
-/* -------------------------- Utilitaires -------------------------- */
+/* ---------------------------------------------- */
+/* Copie & Multiplication                          */
+/* ---------------------------------------------- */
 
 void copyMatrix(const t_matrix *src, t_matrix *dst) {
     if (!src || !dst || !src->data || !dst->data ||
-        src->rows != dst->rows || src->cols != dst->cols) {
-        fprintf(stderr, "copyMatrix: incompatible matrices\n");
+        src->rows != dst->rows || src->cols != dst->cols)
         return;
-    }
+
     memcpy(dst->data[0], src->data[0], src->rows * src->cols * sizeof(double));
 }
 
-int areMultipliable(const t_matrix *A, const t_matrix *B) {
-    return (A && B && A->data && B->data && A->cols == B->rows);
-}
-
-/* -------------------------- Multiplication -------------------------- */
-
 void multiplyMatrices(const t_matrix *A, const t_matrix *B, t_matrix *C) {
-    if (!A || !B || !C || !A->data || !B->data || !C->data) {
-        fprintf(stderr, "multiplyMatrices: null pointer\n");
-        return;
-    }
-    if (A->cols != B->rows || C->rows != A->rows || C->cols != B->cols) {
-        fprintf(stderr, "multiplyMatrices: dimension mismatch\n");
-        return;
-    }
-
     memset(C->data[0], 0, C->rows * C->cols * sizeof(double));
 
-    int n = A->rows;
-    int m = A->cols;
-    int p = B->cols;
-
-    for (int i = 0; i < n; i++) {
-        for (int k = 0; k < m; k++) {
+    for (int i = 0; i < A->rows; i++) {
+        for (int k = 0; k < A->cols; k++) {
             double a = A->data[i][k];
-            if (a == 0.0) continue;
-            for (int j = 0; j < p; j++)
+            if (a == 0) continue;
+
+            for (int j = 0; j < B->cols; j++)
                 C->data[i][j] += a * B->data[k][j];
         }
     }
 }
 
-/* -------------------------- Diff -------------------------- */
+/* ---------------------------------------------- */
+/* Différence                                      */
+/* ---------------------------------------------- */
 
 double diffMatrices(const t_matrix *M, const t_matrix *N) {
-    if (!M || !N || !M->data || !N->data ||
-        M->rows != N->rows || M->cols != N->cols) {
-        fprintf(stderr, "diffMatrices: incompatible matrices\n");
-        return INFINITY;
-    }
-
     double sum = 0;
-    int Ntot = M->rows * M->cols;
-    for (int i = 0; i < Ntot; i++)
+    int tot = M->rows * M->cols;
+
+    for (int i = 0; i < tot; i++)
         sum += fabs(M->data[0][i] - N->data[0][i]);
+
     return sum;
 }
 
-/* -------------------------- M^k -------------------------- */
+/* ---------------------------------------------- */
+/* Puissance M^k                                   */
+/* ---------------------------------------------- */
 
 t_matrix matrixPower(const t_matrix *M, int k) {
-    t_matrix invalid = {0, 0, NULL};
-
-    if (!M || !M->data || M->rows != M->cols || k < 0)
+    if (!M || !M->data || M->rows != M->cols || k < 0) {
+        t_matrix invalid = {0,0,NULL};
         return invalid;
+    }
 
     int n = M->rows;
 
     if (k == 0) {
         t_matrix I = createZeroMatrix(n);
-        for (int i = 0; i < n; i++) I.data[i][i] = 1.0;
+        for (int i = 0; i < n; i++)
+            I.data[i][i] = 1.0;
         return I;
     }
 
@@ -133,7 +153,8 @@ t_matrix matrixPower(const t_matrix *M, int k) {
     t_matrix base   = createZeroMatrix(n);
     t_matrix tmp    = createZeroMatrix(n);
 
-    for (int i = 0; i < n; i++) result.data[i][i] = 1.0; // identite
+    for (int i = 0; i < n; i++) result.data[i][i] = 1.0;
+
     copyMatrix(M, &base);
 
     while (k > 0) {
@@ -150,14 +171,16 @@ t_matrix matrixPower(const t_matrix *M, int k) {
 
     freeMatrix(&base);
     freeMatrix(&tmp);
+
     return result;
 }
 
-/* -------------------------- Print -------------------------- */
+/* ---------------------------------------------- */
+/* Affichage                                       */
+/* ---------------------------------------------- */
 
 void printMatrix(const t_matrix *M, const char *label) {
     if (label) printf("%s\n", label);
-    if (!M || !M->data) { printf("(null)\n"); return; }
 
     for (int i = 0; i < M->rows; i++) {
         for (int j = 0; j < M->cols; j++)
@@ -166,62 +189,58 @@ void printMatrix(const t_matrix *M, const char *label) {
     }
 }
 
-/* -------------------------- Adj -> Mat -------------------------- */
+/* ---------------------------------------------- */
+/* Conversion adj_list → matrice                   */
+/* ---------------------------------------------- */
 
 t_matrix adjacencyListToMatrix(const t_adj_list *list, int n) {
     t_matrix M = createZeroMatrix(n);
-    if (!list || !M.data) return M;
 
     for (int i = 0; i < n; i++) {
         for (int k = 0; k < list[i].degree; k++) {
             int j = list[i].edges[k].to;
             double p = list[i].edges[k].prob;
-
-            if (j < 0 || j >= n) continue;
             M.data[i][j] = p;
         }
     }
+
     return M;
 }
 
-/* -------------------------- Sous-matrice -------------------------- */
+/* ---------------------------------------------- */
+/* Sous-matrice + période                          */
+/* ---------------------------------------------- */
 
 t_matrix subMatrix(t_matrix matrix, t_partition part, int compo_index) {
-    if (compo_index < 0 || compo_index >= part.nb_classes) {
-        fprintf(stderr, "subMatrix: composante invalide\n");
-        return createZeroMatrix(0);
-    }
-
     t_classe C = part.classes[compo_index];
+    int k = C.nb_vertices;
 
-    int k = C.nb_vertices;  // taille de la composante
     t_matrix sub = createZeroMatrix(k);
-    if (!sub.data) return sub;
-
-    // vertices[i] = numéro du sommet dans le graphe global
-    int *verts = C.vertices;
 
     for (int i = 0; i < k; i++) {
         for (int j = 0; j < k; j++) {
-            int gi = verts[i];  // sommet global
-            int gj = verts[j];  // sommet global
+            int gi = C.vertices[i] - 1;
+            int gj = C.vertices[j] - 1;
             sub.data[i][j] = matrix.data[gi][gj];
         }
     }
 
     return sub;
 }
-/* -------------------------- GCD + période -------------------------- */
+
+/* ---------------------------------------------- */
+/* GCD + période                                   */
+/* ---------------------------------------------- */
 
 int gcd(int *vals, int n) {
-    if (n == 0) return 0;
     int g = vals[0];
+
     for (int i = 1; i < n; i++) {
         int a = g, b = vals[i];
-        while (b != 0) {
-            int tmp = b;
+        while (b) {
+            int t = b;
             b = a % b;
-            a = tmp;
+            a = t;
         }
         g = a;
     }
@@ -230,9 +249,8 @@ int gcd(int *vals, int n) {
 
 int getPeriod(t_matrix sub) {
     int n = sub.rows;
-
     int *vals = malloc(n * sizeof(int));
-    int count = 0;
+    int lv = 0;
 
     t_matrix P = createZeroMatrix(n);
     t_matrix tmp = createZeroMatrix(n);
@@ -242,20 +260,21 @@ int getPeriod(t_matrix sub) {
     for (int k = 1; k <= n; k++) {
         int diag = 0;
         for (int i = 0; i < n; i++)
-            if (P.data[i][i] > 0) { diag = 1; break; }
+            if (P.data[i][i] > 0)
+                diag = 1;
 
         if (diag)
-            vals[count++] = k;
+            vals[lv++] = k;
 
         multiplyMatrices(&P, &sub, &tmp);
         copyMatrix(&tmp, &P);
     }
 
-    int period = gcd(vals, count);
+    int per = (lv > 0 ? gcd(vals, lv) : 0);
 
     free(vals);
     freeMatrix(&P);
     freeMatrix(&tmp);
 
-    return period;
+    return per;
 }

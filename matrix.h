@@ -42,5 +42,6 @@ t_matrix adjacencyListToMatrix(const t_adj_list *list, int n);
 t_matrix subMatrix(t_matrix matrix, t_partition part, int compo_index);
 int gcd(int *vals, int nbvals);
 int getPeriod(t_matrix sub_matrix);
+t_adj_list* convertListAdj_to_adjList(List_adj G);
 
 #endif
