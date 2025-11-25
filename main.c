@@ -5,252 +5,430 @@
 #include "hasse.h"
 #include "matrix.h"
 
-void freeAdjList(t_adj_list *A, int n) {
-    for (int i = 0; i < n; i++)
-        free(A[i].edges);
-    free(A);
+void afficherMenu() {
+    printf("\n===============================================================\n");
+    printf("           MENU PRINCIPAL - GRAPHES DE MARKOV\n");
+    printf("===============================================================\n");
+    printf("1. Verifier si c'est un graphe de Markov\n");
+    printf("2. Exporter le graphe au format Mermaid\n");
+    printf("3. Algorithme de Tarjan (composantes fortement connexes)\n");
+    printf("4. Diagramme de Hasse\n");
+    printf("5. Analyser les caracteristiques du graphe\n");
+    printf("6. Calculer la matrice et ses puissances\n");
+    printf("7. Distribution stationnaire par classes\n");
+    printf("8. Calculer la periode des classes\n");
+    printf("9. Tout executer\n");
+    printf("0. Quitter\n");
+    printf("===============================================================\n");
+    printf("Votre choix : ");
 }
 
-int main() {
-    List_adj G;
-    t_partition part;
-    t_link_array links;
-    char filename[256];
+void analyserCaracteristiques(t_partition part, t_link_array links) {
+    printf("\n===============================================================\n");
+    printf("        ANALYSE DES CARACTERISTIQUES DU GRAPHE\n");
+    printf("===============================================================\n");
 
-    printf("Entrez le nom du fichier du graphe : ");
-    scanf("%255s", filename);
+    // Marquer les classes transitoires/persistantes
+    int *est_transitoire = calloc(part.nb_classes, sizeof(int));
 
-    G = readGraph(filename);
+    for (int i = 0; i < links.size; i++) {
+        est_transitoire[links.data[i].from] = 1;
+    }
 
-    int choix;
-
-    do {
-        printf("\n===========================================\n");
-        printf("              MENU PRINCIPAL\n");
-        printf("===========================================\n");
-        printf("1. Verifier si c'est un graphe de Markov\n");
-        printf("2. Exporter le graphe au format Mermaid\n");
-        printf("3. Algorithme de Tarjan\n");
-        printf("4. Diagramme de Hasse\n");
-        printf("5. Caracteristiques du graphe\n");
-        printf("6. Matrice stationnaire\n");
-        printf("7. Distribution stationnaire par classes\n");
-        printf("8. Tout executer\n");
-        printf("0. Quitter\n");
-        printf("===========================================\n");
-        printf("Votre choix : ");
-        scanf("%d", &choix);
-
-        switch (choix) {
-
-        case 1:
-            Markov(G);
-            break;
-
-        case 2:
-            ExportMermaid(G, "graph_mermaid.md");
-            printf("Fichier graph_mermaid.md généré.\n");
-            break;
-
-        case 3:
-            part = tarjan(G);
-            printPartition(part);
-            break;
-
-        case 4:
-            part = tarjan(G);
-            initLinkArray(&links, 10);
-            buildClassLinks(G, part, &links);
-            removeTransitiveLinks(&links);
-            exportHasseToMermaid("hasse.md", part, &links);
-            freeLinkArray(&links);
-            printf("Fichier hasse.md généré.\n");
-            break;
-
-        case 5: {
-            part = tarjan(G);
-            initLinkArray(&links, 10);
-            buildClassLinks(G, part, &links);
-
-            printf("\nCaractéristiques :\n");
-
-            for (int c = 0; c < part.nb_classes; c++) {
-                int outgoing = 0;
-
-                for (int i = 0; i < links.size; i++)
-                    if (links.data[i].from == c)
-                        outgoing = 1;
-
-                printf("Classe C%d : %s\n", c+1,
-                        outgoing ? "transitoire" : "persistante");
-
-                if (!outgoing && part.classes[c].nb_vertices == 1)
-                    printf("   -> Etat absorbant : %d\n", part.classes[c].vertices[0]);
+    printf("\nCLASSES TRANSITOIRES :\n");
+    int nb_transitoires = 0;
+    for (int i = 0; i < part.nb_classes; i++) {
+        if (est_transitoire[i]) {
+            printf("  - %s : {", part.classes[i].name);
+            for (int j = 0; j < part.classes[i].nb_vertices; j++) {
+                printf("%d", part.classes[i].vertices[j]);
+                if (j < part.classes[i].nb_vertices - 1) printf(", ");
             }
-
-            printf("Graphe %s irreductible\n",
-                (part.nb_classes == 1 ? "" : "non"));
-
-            freeLinkArray(&links);
-        } break;
-
-        case 6: {
-            t_adj_list *A = convertListAdj_to_adjList(G);
-            t_matrix M = adjacencyListToMatrix(A, G.taille);
-
-            t_matrix Mk = matrixPower(&M, 1);
-            double diff;
-            int k = 1;
-
-            do {
-                t_matrix next = matrixPower(&M, k+1);
-                diff = diffMatrices(&Mk, &next);
-                freeMatrix(&Mk);
-                Mk = next;
-                k++;
-            } while (diff > 0.01);
-
-            printMatrix(&Mk, "Matrice stationnaire :");
-
-            freeMatrix(&Mk);
-            freeMatrix(&M);
-            freeAdjList(A, G.taille);
-        } break;
-
-        case 7: {
-            part = tarjan(G);
-
-            t_adj_list *A = convertListAdj_to_adjList(G);
-            t_matrix M = adjacencyListToMatrix(A, G.taille);
-
-            for (int c = 0; c < part.nb_classes; c++) {
-                printf("\n--- Classe C%d ---\n", c+1);
-
-                t_matrix sub = subMatrix(M, part, c);
-                int per = getPeriod(sub);
-                printf("Période : %d\n", per);
-
-                t_matrix Mk = matrixPower(&sub, 20);
-                printMatrix(&Mk, "Stationnaire approximative :");
-
-                freeMatrix(&sub);
-                freeMatrix(&Mk);
-            }
-
-            freeMatrix(&M);
-            freeAdjList(A, G.taille);
-        } break;
-
-        case 8: {
-    printf("\n===== TOUT EXECUTER =====\n");
-
-    /* [1] Vérifier Markov */
-    printf("\n[1] Vérification Markov\n");
-    Markov(G);
-
-    /* [2] Export Mermaid du graphe */
-    printf("\n[2] Export Mermaid du graphe\n");
-    ExportMermaid(G, "graph_mermaid.md");
-    printf("Fichier graph_mermaid.md généré.\n");
-
-    /* [3] Tarjan : classes fortement connexes */
-    printf("\n[3] Algorithme de Tarjan\n");
-    part = tarjan(G);
-    printPartition(part);
-
-    /* [4] Diagramme de Hasse */
-    printf("\n[4] Diagramme de Hasse\n");
-    initLinkArray(&links, 10);
-    buildClassLinks(G, part, &links);
-    removeTransitiveLinks(&links);
-    exportHasseToMermaid("hasse.md", part, &links);
-    printf("Fichier hasse.md généré.\n");
-    freeLinkArray(&links);
-
-    /* [5] Caractéristiques du graphe */
-    printf("\n[5] Caractéristiques du graphe\n");
-
-    initLinkArray(&links, 10);
-    buildClassLinks(G, part, &links);
-
-    int is_irreducible = (part.nb_classes == 1);
-
-    for (int c = 0; c < part.nb_classes; c++) {
-        int outgoing = 0;
-
-        for (int i = 0; i < links.size; i++) {
-            if (links.data[i].from == c)
-                outgoing = 1;
+            printf("}\n");
+            nb_transitoires++;
         }
+    }
+    if (nb_transitoires == 0) printf("  Aucune\n");
 
-        printf("Classe C%d : %s\n",
-               c + 1,
-               outgoing ? "transitoire" : "persistante");
-
-        if (!outgoing && part.classes[c].nb_vertices == 1) {
-            printf("   -> Etat absorbant : %d\n",
-                   part.classes[c].vertices[0]);
+    printf("\nCLASSES PERSISTANTES :\n");
+    int nb_persistantes = 0;
+    for (int i = 0; i < part.nb_classes; i++) {
+        if (!est_transitoire[i]) {
+            printf("  - %s : {", part.classes[i].name);
+            for (int j = 0; j < part.classes[i].nb_vertices; j++) {
+                printf("%d", part.classes[i].vertices[j]);
+                if (j < part.classes[i].nb_vertices - 1) printf(", ");
+            }
+            printf("}\n");
+            nb_persistantes++;
         }
     }
 
-    printf("Le graphe est %sirréductible\n",
-           is_irreducible ? "" : "non ");
+    printf("\nETATS ABSORBANTS :\n");
+    int nb_absorbants = 0;
+    for (int i = 0; i < part.nb_classes; i++) {
+        if (!est_transitoire[i] && part.classes[i].nb_vertices == 1) {
+            printf("  - Etat %d\n", part.classes[i].vertices[0]);
+            nb_absorbants++;
+        }
+    }
+    if (nb_absorbants == 0) printf("  Aucun\n");
 
-    freeLinkArray(&links);
+    printf("\nIRREDUCTIBILITE :\n");
+    if (part.nb_classes == 1) {
+        printf("  [OK] Le graphe est IRREDUCTIBLE (une seule classe)\n");
+    } else {
+        printf("  [X] Le graphe n'est PAS irreductible (%d classes)\n", part.nb_classes);
+    }
 
-    /* [6] Matrice stationnaire globale */
-    printf("\n[6] Matrice stationnaire (M^k)\n");
+    printf("===============================================================\n");
 
-    t_adj_list *A = convertListAdj_to_adjList(G);
-    t_matrix M = adjacencyListToMatrix(A, G.taille);
+    free(est_transitoire);
+}
 
-    t_matrix Mk = matrixPower(&M, 1);
-    double diff;
-    int k = 1;
+void calculerPuissancesMatrice(List_adj G) {
+    printf("\n===============================================================\n");
+    printf("          CALCUL DES PUISSANCES DE LA MATRICE\n");
+    printf("===============================================================\n");
 
-    do {
-        t_matrix next = matrixPower(&M, k + 1);
-        diff = diffMatrices(&Mk, &next);
+    t_matrix M = listAdjToMatrix(G);
+
+    printf("\nMatrice de transition M :\n");
+    printMatrix(&M, NULL);
+
+    int choix;
+    printf("\nQue souhaitez-vous calculer ?\n");
+    printf("1. M^3\n");
+    printf("2. M^7\n");
+    printf("3. Convergence vers distribution stationnaire\n");
+    printf("Votre choix : ");
+    scanf("%d", &choix);
+
+    if (choix == 1) {
+        t_matrix M3 = matrixPower(&M, 3);
+        printf("\nM^3 :\n");
+        printMatrix(&M3, NULL);
+        freeMatrix(&M3);
+    } else if (choix == 2) {
+        t_matrix M7 = matrixPower(&M, 7);
+        printf("\nM^7 :\n");
+        printMatrix(&M7, NULL);
+        freeMatrix(&M7);
+    } else if (choix == 3) {
+        double epsilon = 0.01;
+        int k = 1;
+        t_matrix Mk = matrixPower(&M, k);
+        t_matrix Mk_prev = createZeroMatrix(M.rows);
+
+        printf("\nRecherche de convergence (epsilon = %.4f)...\n", epsilon);
+
+        while (k < 1000) {
+            copyMatrix(&Mk, &Mk_prev);
+            freeMatrix(&Mk);
+            k++;
+            Mk = matrixPower(&M, k);
+
+            double diff = diffMatrices(&Mk, &Mk_prev);
+
+            if (diff < epsilon) {
+                printf("\n[OK] Convergence atteinte a k = %d (diff = %.6f)\n", k, diff);
+                printf("\nDistribution stationnaire M^%d :\n", k);
+                printMatrix(&Mk, NULL);
+                freeMatrix(&Mk);
+                freeMatrix(&Mk_prev);
+                freeMatrix(&M);
+                return;
+            }
+
+            if (k % 100 == 0) {
+                printf("  k = %d, diff = %.6f\n", k, diff);
+            }
+        }
+
+        printf("\n[!] Pas de convergence detectee apres %d iterations\n", k);
+        printf("Le graphe pourrait etre periodique ou non-convergent.\n");
+
         freeMatrix(&Mk);
-        Mk = next;
-        k++;
-    } while (diff > 0.01);
-
-    printMatrix(&Mk, "Matrice stationnaire approximative :");
-    freeMatrix(&Mk);
-
-    /* [7] Distributions stationnaires par classes */
-    printf("\n[7] Distributions stationnaires par classes\n");
-
-    for (int c = 0; c < part.nb_classes; c++) {
-        printf("\n--- Classe C%d ---\n", c + 1);
-
-        t_matrix sub = subMatrix(M, part, c);
-        int per = getPeriod(sub);
-        printf("Periode : %d\n", per);
-
-        t_matrix Mk_sub = matrixPower(&sub, 20);
-        printMatrix(&Mk_sub, "Distribution stationnaire approx :");
-
-        freeMatrix(&sub);
-        freeMatrix(&Mk_sub);
+        freeMatrix(&Mk_prev);
     }
 
     freeMatrix(&M);
-    freeAdjList(A, G.taille);
+}
 
-    printf("\n===== FIN DE TOUT EXECUTER =====\n");
-} break;
+void calculerDistributionsParClasses(List_adj G, t_partition part) {
+    printf("\n===============================================================\n");
+    printf("      DISTRIBUTIONS STATIONNAIRES PAR CLASSES\n");
+    printf("===============================================================\n");
 
-        case 0:
-            printf("Au revoir !\n");
-            break;
+    t_matrix M = listAdjToMatrix(G);
 
-        default:
-            printf("Choix invalide !\n");
+    for (int c = 0; c < part.nb_classes; c++) {
+        printf("\n--- Classe %s : {", part.classes[c].name);
+        for (int i = 0; i < part.classes[c].nb_vertices; i++) {
+            printf("%d", part.classes[c].vertices[i]);
+            if (i < part.classes[c].nb_vertices - 1) printf(", ");
+        }
+        printf("} ---\n");
+
+        t_matrix sub = subMatrix(M, part, c);
+
+        if (sub.rows == 0) {
+            printf("Erreur : sous-matrice invalide\n");
+            continue;
         }
 
+        printf("Sous-matrice :\n");
+        printMatrix(&sub, NULL);
+
+        // Calcul de la distribution stationnaire
+        double epsilon = 0.01;
+        t_matrix Mk = matrixPower(&sub, 1);
+        t_matrix Mk_prev = createZeroMatrix(sub.rows);
+
+        int k;
+        for (k = 2; k < 500; k++) {
+            copyMatrix(&Mk, &Mk_prev);
+            freeMatrix(&Mk);
+            Mk = matrixPower(&sub, k);
+
+            double diff = diffMatrices(&Mk, &Mk_prev);
+            if (diff < epsilon) {
+                printf("\n[OK] Distribution stationnaire (convergence a k=%d) :\n", k);
+                printMatrix(&Mk, NULL);
+                break;
+            }
+        }
+
+        if (k >= 500) {
+            printf("\n[!] Pas de convergence (classe possiblement periodique)\n");
+        }
+
+        freeMatrix(&Mk);
+        freeMatrix(&Mk_prev);
+        freeMatrix(&sub);
+    }
+
+    freeMatrix(&M);
+}
+
+void calculerPeriodes(List_adj G, t_partition part) {
+    printf("\n===============================================================\n");
+    printf("              CALCUL DES PERIODES\n");
+    printf("===============================================================\n");
+
+    t_matrix M = listAdjToMatrix(G);
+
+    for (int c = 0; c < part.nb_classes; c++) {
+        printf("\nClasse %s : {", part.classes[c].name);
+        for (int i = 0; i < part.classes[i].nb_vertices; i++) {
+            printf("%d", part.classes[c].vertices[i]);
+            if (i < part.classes[c].nb_vertices - 1) printf(", ");
+        }
+        printf("}\n");
+
+        t_matrix sub = subMatrix(M, part, c);
+
+        if (sub.rows == 0) {
+            printf("  Erreur : sous-matrice invalide\n");
+            continue;
+        }
+
+        int periode = getPeriod(sub);
+        printf("  Periode = %d\n", periode);
+
+        if (periode == 1) {
+            printf("  -> Classe aperiodique\n");
+        } else {
+            printf("  -> Classe periodique de periode %d\n", periode);
+        }
+
+        freeMatrix(&sub);
+    }
+
+    freeMatrix(&M);
+}
+
+void toutExecuter(List_adj G) {
+    printf("\n===============================================================\n");
+    printf("              EXECUTION COMPLETE\n");
+    printf("===============================================================\n");
+
+    // 1. Vérification Markov
+    printf("\n--- VERIFICATION MARKOV ---\n");
+    Markov(G);
+
+    // 2. Export Mermaid
+    ExportMermaid(G, "../graphe_mermaid.mmd");
+    printf("\n[OK] Graphe exporte vers 'graphe_mermaid.mmd'\n");
+
+    // 3. Tarjan
+    printf("\n--- ALGORITHME DE TARJAN ---\n");
+    t_partition part = tarjan(G);
+    printPartition(part);
+
+    // 4. Hasse
+    printf("\n--- DIAGRAMME DE HASSE ---\n");
+    t_link_array links;
+    initLinkArray(&links, 10);
+    buildClassLinks(G, part, &links);
+    exportHasseToMermaid("../hasse_mermaid.mmd", part, &links);
+    printf("[OK] Diagramme de Hasse exporte vers 'hasse_mermaid.mmd'\n");
+
+    // 5. Caractéristiques
+    analyserCaracteristiques(part, links);
+
+    // 6. Matrice
+    t_matrix M = listAdjToMatrix(G);
+    printf("\n--- MATRICE DE TRANSITION ---\n");
+    printMatrix(&M, NULL);
+
+    // 7. Distributions
+    calculerDistributionsParClasses(G, part);
+
+    // 8. Périodes
+    calculerPeriodes(G, part);
+
+    // Libération
+    freeMatrix(&M);
+    freeLinkArray(&links);
+    for (int i = 0; i < part.nb_classes; i++) {
+        free(part.classes[i].vertices);
+    }
+    free(part.classes);
+}
+
+int main() {
+    char filename[256];
+
+    printf("===============================================================\n");
+    printf("        PROJET GRAPHES DE MARKOV - TI301\n");
+    printf("===============================================================\n");
+    printf("\nEntrez le nom du fichier graphe : ");
+    scanf("%s", filename);
+
+    List_adj G = readGraph(filename);
+
+    printf("\n[OK] Graphe charge : %d sommets\n", G.taille);
+    printf("\nListe d'adjacence :\n");
+    DisplayListAdj(&G);
+
+    int choix;
+    t_partition part = {NULL, 0};
+    t_link_array links = {NULL, 0, 0};
+    int tarjan_execute = 0;
+
+    do {
+        afficherMenu();
+        scanf("%d", &choix);
+
+        switch(choix) {
+            case 1:
+                printf("\n--- VERIFICATION MARKOV ---\n");
+                Markov(G);
+                break;
+
+            case 2:
+                ExportMermaid(G, "../graphe_mermaid.mmd");
+                printf("\n[OK] Graphe exporte vers 'graphe_mermaid.mmd'\n");
+                break;
+
+            case 3:
+                if (tarjan_execute) {
+                    for (int i = 0; i < part.nb_classes; i++) {
+                        free(part.classes[i].vertices);
+                    }
+                    free(part.classes);
+                }
+                printf("\n--- ALGORITHME DE TARJAN ---\n");
+                part = tarjan(G);
+                tarjan_execute = 1;
+                printPartition(part);
+                break;
+
+            case 4:
+                if (!tarjan_execute) {
+                    printf("\n[!] Veuillez d'abord executer Tarjan (option 3)\n");
+                    break;
+                }
+                if (links.data) freeLinkArray(&links);
+                initLinkArray(&links, 10);
+                buildClassLinks(G, part, &links);
+                exportHasseToMermaid("../hasse_mermaid.mmd", part, &links);
+                printf("\n[OK] Diagramme de Hasse exporte vers 'hasse_mermaid.mmd'\n");
+                break;
+
+            case 5:
+                if (!tarjan_execute) {
+                    printf("\n[!] Veuillez d'abord executer Tarjan (option 3)\n");
+                    break;
+                }
+                if (!links.data || links.size == 0) {
+                    initLinkArray(&links, 10);
+                    buildClassLinks(G, part, &links);
+                }
+                analyserCaracteristiques(part, links);
+                break;
+
+            case 6:
+                calculerPuissancesMatrice(G);
+                break;
+
+            case 7:
+                if (!tarjan_execute) {
+                    printf("\n[!] Veuillez d'abord executer Tarjan (option 3)\n");
+                    break;
+                }
+                calculerDistributionsParClasses(G, part);
+                break;
+
+            case 8:
+                if (!tarjan_execute) {
+                    printf("\n[!] Veuillez d'abord executer Tarjan (option 3)\n");
+                    break;
+                }
+                calculerPeriodes(G, part);
+                break;
+
+            case 9:
+                if (tarjan_execute) {
+                    for (int i = 0; i < part.nb_classes; i++) {
+                        free(part.classes[i].vertices);
+                    }
+                    free(part.classes);
+                    if (links.data) freeLinkArray(&links);
+                }
+                toutExecuter(G);
+                tarjan_execute = 0;
+                links.data = NULL;
+                break;
+
+            case 0:
+                printf("\nAu revoir !\n");
+                break;
+
+            default:
+                printf("\n[!] Choix invalide\n");
+        }
     } while (choix != 0);
+
+    // Libération mémoire
+    if (tarjan_execute) {
+        for (int i = 0; i < part.nb_classes; i++) {
+            free(part.classes[i].vertices);
+        }
+        free(part.classes);
+    }
+    if (links.data) freeLinkArray(&links);
+
+    for (int i = 0; i < G.taille; i++) {
+        Cell *c = G.tab[i].head;
+        while (c) {
+            Cell *tmp = c;
+            c = c->next;
+            free(tmp);
+        }
+    }
+    free(G.tab);
 
     return 0;
 }

@@ -170,50 +170,41 @@ char* getId(int num) {
     return buf;
 }
 
+
 // -------------------------------
 // Exportation version Mermaid
 // -------------------------------
-
 void ExportMermaid(List_adj G, const char *filename) {
     FILE *f = fopen(filename, "w");
-    if (!f) { perror("Erreur création du fichier Mermaid"); exit(EXIT_FAILURE); }
+    if (!f) {
+        perror("Erreur création du fichier Mermaid");
+        exit(EXIT_FAILURE);
+    }
 
-    fprintf(f, "---\nconfig:\n layout: elk\n theme: neo\n look: neo\n---\n");
+    // En-tête selon le format du projet
+    fprintf(f, "---\n");
+    fprintf(f, "config:\n");
+    fprintf(f, "  layout: elk\n");
+    fprintf(f, "  theme: neo\n");
+    fprintf(f, "  look: neo\n");
+    fprintf(f, "---\n");
     fprintf(f, "flowchart LR\n");
 
-    // Sommets
+    // Déclaration des sommets
     for (int i = 0; i < G.taille; i++) {
         fprintf(f, "%s((%d))\n", getId(i+1), i+1);
     }
 
-    // Pour chaque liste, on trie les arêtes AVANT d'afficher
+    // Déclaration des arêtes
     for (int i = 0; i < G.taille; i++) {
-        // compter
-        int n = 0;
-        for (Cell *c = G.tab[i].head; c; c = c->next) n++;
-
-        // copier
-        Cell **arr = malloc(n * sizeof(Cell*));
-        int idx = 0;
-        for (Cell *c = G.tab[i].head; c; c = c->next) arr[idx++] = c;
-
-        // trier par sommet d’arrivée croissant
-        for (int a = 0; a < n-1; a++)
-            for (int b = a+1; b < n; b++)
-                if (arr[a]->sommet_d_arrive > arr[b]->sommet_d_arrive) {
-                    Cell *tmp = arr[a];
-                    arr[a] = arr[b];
-                    arr[b] = tmp;
-                }
-
-        // affichage trié
-        for (int k = 0; k < n; k++)
-            fprintf(f, "%s -->|%.2f| %s\n",
+        Cell *c = G.tab[i].head;
+        while(c) {
+            fprintf(f, "%s -->|%.2f|%s\n",
                     getId(i+1),
-                    arr[k]->probabilite,
-                    getId(arr[k]->sommet_d_arrive));
-
-        free(arr);
+                    c->probabilite,
+                    getId(c->sommet_d_arrive));
+            c = c->next;
+        }
     }
 
     fclose(f);

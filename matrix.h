@@ -2,23 +2,14 @@
 #define MATRIX_H
 
 #include <stddef.h>
-#include "tarjan.h"   // IMPORTANT : pour récupérer t_partition et t_classe
+#include "tarjan.h"
+#include "liste_adjacence.h"  // AJOUT IMPORTANT
 
 typedef struct {
     int rows;
     int cols;
     double **data;
 } t_matrix;
-
-typedef struct {
-    int to;
-    double prob;
-} t_adj_edge;
-
-typedef struct {
-    int degree;
-    t_adj_edge *edges;
-} t_adj_list;
 
 /* Création */
 t_matrix createEmptyMatrix(int n);
@@ -35,13 +26,12 @@ double diffMatrices(const t_matrix *M, const t_matrix *N);
 t_matrix matrixPower(const t_matrix *M, int k);
 void printMatrix(const t_matrix *M, const char *label);
 
-/* Adj → Mat */
-t_matrix adjacencyListToMatrix(const t_adj_list *list, int n);
+/* CORRECTION: List_adj → Mat */
+t_matrix listAdjToMatrix(List_adj G);
 
 /* PARTIE 3 */
 t_matrix subMatrix(t_matrix matrix, t_partition part, int compo_index);
 int gcd(int *vals, int nbvals);
 int getPeriod(t_matrix sub_matrix);
-t_adj_list* convertListAdj_to_adjList(List_adj G);
 
 #endif

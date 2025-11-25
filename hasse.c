@@ -1,8 +1,3 @@
-//
-// Created by melis on 23/11/2025.
-//
-
-
 #include <stdio.h>
 #include <string.h>
 #include "hasse.h"
@@ -41,115 +36,72 @@ bool linkExists(t_link_array *arr, int from, int to) {
 
 int* buildVertexClassArray(t_partition part, int nb_vertices) {
     int *class_of = (int*)malloc(nb_vertices * sizeof(int));
-
+    
     for (int c = 0; c < part.nb_classes; c++) {
         for (int j = 0; j < part.classes[c].nb_vertices; j++) {
-            int v = part.classes[c].vertices[j] - 1; // sommets = 1..n
-            class_of[v] = c; // classe numéro c
+            int v = part.classes[c].vertices[j] - 1; // CORRECTION: sommets base 1
+            if(v >= 0 && v < nb_vertices) {
+                class_of[v] = c;
+            }
         }
     }
-
     return class_of;
 }
-
 void buildClassLinks(List_adj G, t_partition part, t_link_array *links) {
     int *class_of = buildVertexClassArray(part, G.taille);
-
     for (int i = 0; i < G.taille; i++) {
         int Ci = class_of[i];
-
         Cell *c = G.tab[i].head;
+
         while (c != NULL) {
-            int j = c->sommet_d_arrive - 1;
-            int Cj = class_of[j];
+            int j = c->sommet_d_arrive - 1;  // CORRECTION: base 1 → base 0
 
-            if (Ci != Cj && !linkExists(links, Ci, Cj)) {
-                addLink(links, Ci, Cj);
+            if (j >= 0 && j < G.taille) {
+                int Cj = class_of[j];
+
+                if (Ci != Cj && !linkExists(links, Ci, Cj)) {
+                    addLink(links, Ci, Cj);
+                }
             }
-
             c = c->next;
         }
     }
 
     free(class_of);
 }
-
-// Fonction optionnelle donnée par le prof — déjà OK dans ton projet
-void removeTransitiveLinks(t_link_array *p_link_array);
-
-void exportHasseToMermaid(const char *filename,
-                          t_partition part,
-                          t_link_array *links) {
-
+/* CORRECTION: Export Mermaid pour Hasse */
+void exportHasseToMermaid(const char *filename, t_partition part, t_link_array *links) {
     FILE *f = fopen(filename, "w");
     if (!f) {
         perror("Impossible de créer le fichier Mermaid");
         return;
     }
+    // En-tête Mermaid
+    fprintf(f, "---\n");
+    fprintf(f, "config:\n");
+    fprintf(f, "  layout: elk\n");
+    fprintf(f, "  theme: neo\n");
+    fprintf(f, "  look: neo\n");
+    fprintf(f, "---\n");
+    fprintf(f, "graph TD\n");
 
-    fprintf(f, "graph TD;\n");
-
+    // Définition des nœuds (classes)
     for (int i = 0; i < part.nb_classes; i++) {
-        fprintf(f, "  C%d(\"{ ", i+1);
-
+        fprintf(f, "    %s[\"{", part.classes[i].name);
         for (int j = 0; j < part.classes[i].nb_vertices; j++) {
-            fprintf(f, "%d ", part.classes[i].vertices[j]);
+            fprintf(f, "%d", part.classes[i].vertices[j]);
+            if (j < part.classes[i].nb_vertices - 1)
+                fprintf(f, ",");
         }
-
-        fprintf(f, "}\");\n");
+        fprintf(f, "}\"]\n");
     }
 
+    // Liens entre classes
     for (int i = 0; i < links->size; i++) {
-        fprintf(f, "  C%d --> C%d;\n",
-                links->data[i].from + 1, links->data[i].to + 1);
+        fprintf(f, "    C%d --> C%d\n",
+                links->data[i].from + 1,
+                links->data[i].to + 1);
     }
 
     fclose(f);
-}
-
-// ----------------------------------------------------------
-// SUPPRESSION DES LIENS TRANSITIFS DANS UN DIAGRAMME DE HASSE
-// ----------------------------------------------------------
-
-static int linkDirectExists(t_link_array *arr, int a, int b) {
-    for (int i = 0; i < arr->size; i++) {
-        if (arr->data[i].from == a && arr->data[i].to == b)
-            return 1;
-    }
-    return 0;
-}
-
-static int linkTransitExists(t_link_array *arr, int a, int b) {
-    // existe-t-il un chemin a -> k -> b ?
-    for (int i = 0; i < arr->size; i++) {
-        int k = arr->data[i].to;
-        if (arr->data[i].from == a && k != b) {
-            // si a -> k puis k -> b
-            if (linkDirectExists(arr, k, b))
-                return 1;
-        }
-    }
-    return 0;
-}
-
-void removeTransitiveLinks(t_link_array *p_link_array) {
-    if (!p_link_array || p_link_array->size <= 1)
-        return;
-
-    t_link_array cleaned;
-    initLinkArray(&cleaned, p_link_array->size);
-
-    for (int i = 0; i < p_link_array->size; i++) {
-        int a = p_link_array->data[i].from;
-        int b = p_link_array->data[i].to;
-
-        // Si le lien est transitif, on NE LE GARDE PAS
-        if (!linkTransitExists(p_link_array, a, b)) {
-            addLink(&cleaned, a, b);
-        }
-    }
-
-    // remplace l'ancien array
-    free(p_link_array->data);
-    *p_link_array = cleaned;
 }
