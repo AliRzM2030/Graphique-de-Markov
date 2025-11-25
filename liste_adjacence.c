@@ -1,9 +1,9 @@
 #include "liste_adjacence.h"
 
 // -------------------------------
-// Création d’une cellule
+// Création d'une cellule
 // -------------------------------
-Cell* CreateCell(int sommet , float probabilite){
+Cell* CreateCell(int sommet, float probabilite){
     Cell *newcell = (Cell*)malloc(sizeof(Cell));
     if (newcell == NULL) {
         perror("Erreur d'allocation mémoire");
@@ -18,7 +18,7 @@ Cell* CreateCell(int sommet , float probabilite){
 // -------------------------------
 // Ajout d'une cellule dans une liste
 // -------------------------------
-void AddCell(List* list , int sommet , float probabilite){
+void AddCell(List* list, int sommet, float probabilite){
     Cell* newCell = CreateCell(sommet, probabilite);
     newCell->next = list->head;
     list->head = newCell;
@@ -42,16 +42,13 @@ List_adj CreateEmptyListAdj(int taille) {
     List_adj la;
     la.taille = taille;
     la.tab = (List*)malloc(taille * sizeof(List));
-
     if (la.tab == NULL) {
         perror("Erreur allocation du tableau");
         exit(EXIT_FAILURE);
     }
-
     for (int i = 0; i < taille; ++i) {
         la.tab[i].head = NULL;
     }
-
     return la;
 }
 
@@ -59,9 +56,9 @@ List_adj CreateEmptyListAdj(int taille) {
 // Affichage liste d'adjacence
 // -------------------------------
 void DisplayListAdj(List_adj* La){
-    for(int i = 0 ; i < La->taille ; i++){
+    for(int i = 0; i < La->taille; i++){
         printf("Sommet %d : ", i+1);
-        DisplayList(&La->tab[i]);  // IMPORTANT : passer l’adresse
+        DisplayList(&La->tab[i]);
         printf("\n");
     }
 }
@@ -70,21 +67,17 @@ void DisplayListAdj(List_adj* La){
 // Ajout d'une arête
 // -------------------------------
 void list_add_edge(List *L, int to, float p) {
-
     if (p <= 0.0f || p > 1.0f) {
         fprintf(stderr, "Probabilité invalide : %.2f\n", p);
         exit(EXIT_FAILURE);
     }
-
     Cell *newCell = malloc(sizeof(Cell));
     if (!newCell){
         perror("Erreur d'allocation");
         exit(EXIT_FAILURE);
     }
-
     newCell->sommet_d_arrive = to;
     newCell->probabilite = p;
-
     newCell->next = L->head;
     L->head = newCell;
 }
@@ -106,14 +99,11 @@ List_adj readGraph(const char *filename) {
     List_adj G = CreateEmptyListAdj(nbvert);
 
     while (fscanf(file, "%d %d %f", &depart, &arrivee, &proba) == 3) {
-
         if (depart < 1 || depart > nbvert || arrivee < 1 || arrivee > nbvert) {
-            fprintf(stderr, "Sommet hors bornes: %d -> %d (n=%d)\n",
-                    depart, arrivee, nbvert);
+            fprintf(stderr, "Sommet hors bornes: %d -> %d (n=%d)\n", depart, arrivee, nbvert);
             fclose(file);
             exit(EXIT_FAILURE);
         }
-
         list_add_edge(&G.tab[depart - 1], arrivee, proba);
     }
 
@@ -126,22 +116,18 @@ List_adj readGraph(const char *filename) {
 // -------------------------------
 void Markov(List_adj adj) {
     int ok = 1;
-
     for (int i = 0; i < adj.taille; i++) {
         float sum = 0;
         Cell *m = adj.tab[i].head;
-
         while (m != NULL) {
             sum += m->probabilite;
             m = m->next;
         }
-
         if (sum < 0.99f || sum > 1.001f) {
             printf("Sommet %d NON valide : somme = %.2f\n", i+1, sum);
             ok = 0;
         }
     }
-
     if (ok) printf("Le graphe est un graphe de Markov\n");
 }
 
@@ -158,7 +144,6 @@ char* getId(int num) {
         buf[index++] = 'A' + (n % 26);
         n /= 26;
     }
-
     buf[index] = '\0';
 
     for (int i = 0; i < index/2; i++) {
@@ -166,10 +151,8 @@ char* getId(int num) {
         buf[i] = buf[index - i - 1];
         buf[index - i - 1] = tmp;
     }
-
     return buf;
 }
-
 
 // -------------------------------
 // Exportation version Mermaid
@@ -181,28 +164,21 @@ void ExportMermaid(List_adj G, const char *filename) {
         exit(EXIT_FAILURE);
     }
 
-    // En-tête EXACT selon le projet (4 espaces d'indentation)
-    fprintf(f, "---\n");
-    fprintf(f, "config:\n");
-    fprintf(f, "    layout: elk\n");
-    fprintf(f, "    theme: neo\n");
-    fprintf(f, "    look: neo\n");
-    fprintf(f, "---\n");
+    fprintf(f, "---\nconfig:\n layout: elk\n theme: neo\n look: neo\n---\n");
     fprintf(f, "flowchart LR\n");
 
     // Déclaration des sommets
-    for (int i = 0; i < G.taille; i++) {
+    for (int i = 0; i < G.taille; i++){
         fprintf(f, "%s((%d))\n", getId(i+1), i+1);
     }
 
-    // Ligne vide avant les arêtes
     fprintf(f, "\n");
 
-    // Déclaration des arêtes
-    for (int i = 0; i < G.taille; i++) {
+    // Arêtes avec les bonnes destinations
+    for (int i = 0; i < G.taille; i++){
         Cell *c = G.tab[i].head;
-        while(c) {
-            fprintf(f, "%s -->|%.2f|%s\n",
+        while(c){
+            fprintf(f, "%s -->|%.2f| %s\n",
                     getId(i+1),
                     c->probabilite,
                     getId(c->sommet_d_arrive));
@@ -210,6 +186,5 @@ void ExportMermaid(List_adj G, const char *filename) {
         }
     }
 
-    fflush(f);  // AJOUT : Force l'écriture
     fclose(f);
 }

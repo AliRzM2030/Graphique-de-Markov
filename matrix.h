@@ -3,13 +3,23 @@
 
 #include <stddef.h>
 #include "tarjan.h"
-#include "liste_adjacence.h"  // AJOUT IMPORTANT
+#include "liste_adjacence.h"
 
 typedef struct {
     int rows;
     int cols;
     double **data;
 } t_matrix;
+
+typedef struct {
+    int to;
+    double prob;
+} t_adj_edge;
+
+typedef struct {
+    int degree;
+    t_adj_edge *edges;
+} t_adj_list;
 
 /* Création */
 t_matrix createEmptyMatrix(int n);
@@ -26,7 +36,7 @@ double diffMatrices(const t_matrix *M, const t_matrix *N);
 t_matrix matrixPower(const t_matrix *M, int k);
 void printMatrix(const t_matrix *M, const char *label);
 
-/* CORRECTION: List_adj → Mat */
+/* Conversion List_adj -> Matrix */
 t_matrix listAdjToMatrix(List_adj G);
 
 /* PARTIE 3 */

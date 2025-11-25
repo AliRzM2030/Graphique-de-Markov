@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "liste_adjacence.h"
 #include "tarjan.h"
 #include "hasse.h"
@@ -28,7 +29,6 @@ void analyserCaracteristiques(t_partition part, t_link_array links) {
     printf("        ANALYSE DES CARACTERISTIQUES DU GRAPHE\n");
     printf("===============================================================\n");
 
-    // Marquer les classes transitoires/persistantes
     int *est_transitoire = calloc(part.nb_classes, sizeof(int));
 
     for (int i = 0; i < links.size; i++) {
@@ -51,7 +51,6 @@ void analyserCaracteristiques(t_partition part, t_link_array links) {
     if (nb_transitoires == 0) printf("  Aucune\n");
 
     printf("\nCLASSES PERSISTANTES :\n");
-    int nb_persistantes = 0;
     for (int i = 0; i < part.nb_classes; i++) {
         if (!est_transitoire[i]) {
             printf("  - %s : {", part.classes[i].name);
@@ -60,7 +59,6 @@ void analyserCaracteristiques(t_partition part, t_link_array links) {
                 if (j < part.classes[i].nb_vertices - 1) printf(", ");
             }
             printf("}\n");
-            nb_persistantes++;
         }
     }
 
@@ -180,7 +178,6 @@ void calculerDistributionsParClasses(List_adj G, t_partition part) {
         printf("Sous-matrice :\n");
         printMatrix(&sub, NULL);
 
-        // Calcul de la distribution stationnaire
         double epsilon = 0.01;
         t_matrix Mk = matrixPower(&sub, 1);
         t_matrix Mk_prev = createZeroMatrix(sub.rows);
@@ -220,7 +217,7 @@ void calculerPeriodes(List_adj G, t_partition part) {
 
     for (int c = 0; c < part.nb_classes; c++) {
         printf("\nClasse %s : {", part.classes[c].name);
-        for (int i = 0; i < part.classes[i].nb_vertices; i++) {
+        for (int i = 0; i < part.classes[c].nb_vertices; i++) {
             printf("%d", part.classes[c].vertices[i]);
             if (i < part.classes[c].nb_vertices - 1) printf(", ");
         }
@@ -253,42 +250,32 @@ void toutExecuter(List_adj G) {
     printf("              EXECUTION COMPLETE\n");
     printf("===============================================================\n");
 
-    // 1. Vérification Markov
     printf("\n--- VERIFICATION MARKOV ---\n");
     Markov(G);
 
-    // 2. Export Mermaid
-    ExportMermaid(G, "../graphe_mermaid.mmd");
+    ExportMermaid(G, "graphe_mermaid.mmd");
     printf("\n[OK] Graphe exporte vers 'graphe_mermaid.mmd'\n");
 
-    // 3. Tarjan
     printf("\n--- ALGORITHME DE TARJAN ---\n");
     t_partition part = tarjan(G);
     printPartition(part);
 
-    // 4. Hasse
     printf("\n--- DIAGRAMME DE HASSE ---\n");
     t_link_array links;
     initLinkArray(&links, 10);
     buildClassLinks(G, part, &links);
-    exportHasseToMermaid("../hasse_mermaid.mmd", part, &links);
+    exportHasseToMermaid("hasse_mermaid.mmd", part, &links);
     printf("[OK] Diagramme de Hasse exporte vers 'hasse_mermaid.mmd'\n");
 
-    // 5. Caractéristiques
     analyserCaracteristiques(part, links);
 
-    // 6. Matrice
     t_matrix M = listAdjToMatrix(G);
     printf("\n--- MATRICE DE TRANSITION ---\n");
     printMatrix(&M, NULL);
 
-    // 7. Distributions
     calculerDistributionsParClasses(G, part);
-
-    // 8. Périodes
     calculerPeriodes(G, part);
 
-    // Libération
     freeMatrix(&M);
     freeLinkArray(&links);
     for (int i = 0; i < part.nb_classes; i++) {
@@ -302,133 +289,144 @@ int main() {
 
     printf("===============================================================\n");
     printf("        PROJET GRAPHES DE MARKOV - TI301\n");
-    printf("===============================================================\n");
-    printf("\nEntrez le nom du fichier graphe : ");
+    printf("===============================================================\n\n");
+
+    printf("Entrez le nom du fichier graphe : ");
     scanf("%s", filename);
 
     List_adj G = readGraph(filename);
 
     printf("\n[OK] Graphe charge : %d sommets\n", G.taille);
-    printf("\nListe d'adjacence :\n");
-    DisplayListAdj(&G);
+
+    printf("\n=== DEBUG : Contenu du graphe ===\n");
+    for (int i = 0; i < G.taille; i++) {
+        printf("Sommet %d : ", i+1);
+        Cell *c = G.tab[i].head;
+        while (c != NULL) {
+            printf("-> %d (%.2f) ", c->sommet_d_arrive, c->probabilite);
+            c = c->next;
+        }
+        printf("\n");
+    }
+    printf("=================================\n");
 
     int choix;
     t_partition part = {NULL, 0};
     t_link_array links = {NULL, 0, 0};
     int tarjan_execute = 0;
-
     do {
-        afficherMenu();
-        scanf("%d", &choix);
+    afficherMenu();
+    scanf("%d", &choix);
 
-        switch(choix) {
-            case 1:
-                printf("\n--- VERIFICATION MARKOV ---\n");
-                Markov(G);
-                break;
+    switch(choix) {
+        case 1:
+            printf("\n--- VERIFICATION MARKOV ---\n");
+            Markov(G);
+            break;
 
-            case 2:
-                ExportMermaid(G, "../graphe_mermaid.mmd");
-                printf("\n[OK] Graphe exporte vers 'graphe_mermaid.mmd'\n");
-                break;
+        case 2:
+            ExportMermaid(G, "graphe_mermaid.mmd");
+            printf("\n[OK] Graphe exporte vers 'graphe_mermaid.mmd'\n");
+            break;
 
-            case 3:
-                if (tarjan_execute) {
-                    for (int i = 0; i < part.nb_classes; i++) {
-                        free(part.classes[i].vertices);
-                    }
-                    free(part.classes);
+        case 3:
+            if (tarjan_execute) {
+                for (int i = 0; i < part.nb_classes; i++) {
+                    free(part.classes[i].vertices);
                 }
-                printf("\n--- ALGORITHME DE TARJAN ---\n");
-                part = tarjan(G);
-                tarjan_execute = 1;
-                printPartition(part);
-                break;
+                free(part.classes);
+            }
+            printf("\n--- ALGORITHME DE TARJAN ---\n");
+            part = tarjan(G);
+            tarjan_execute = 1;
+            printPartition(part);
+            break;
 
-            case 4:
-                if (!tarjan_execute) {
-                    printf("\n[!] Veuillez d'abord executer Tarjan (option 3)\n");
-                    break;
-                }
-                if (links.data) freeLinkArray(&links);
+        case 4:
+            if (!tarjan_execute) {
+                printf("\n[!] Veuillez d'abord executer Tarjan (option 3)\n");
+                break;
+            }
+            if (links.data) freeLinkArray(&links);
+            initLinkArray(&links, 10);
+            buildClassLinks(G, part, &links);
+            exportHasseToMermaid("hasse_mermaid.mmd", part, &links);
+            printf("\n[OK] Diagramme de Hasse exporte vers 'hasse_mermaid.mmd'\n");
+            break;
+
+        case 5:
+            if (!tarjan_execute) {
+                printf("\n[!] Veuillez d'abord executer Tarjan (option 3)\n");
+                break;
+            }
+            if (!links.data || links.size == 0) {
                 initLinkArray(&links, 10);
                 buildClassLinks(G, part, &links);
-                exportHasseToMermaid("../hasse_mermaid.mmd", part, &links);
-                printf("\n[OK] Diagramme de Hasse exporte vers 'hasse_mermaid.mmd'\n");
-                break;
+            }
+            analyserCaracteristiques(part, links);
+            break;
 
-            case 5:
-                if (!tarjan_execute) {
-                    printf("\n[!] Veuillez d'abord executer Tarjan (option 3)\n");
-                    break;
+        case 6:
+            calculerPuissancesMatrice(G);
+            break;
+
+        case 7:
+            if (!tarjan_execute) {
+                printf("\n[!] Veuillez d'abord executer Tarjan (option 3)\n");
+                break;
+            }
+            calculerDistributionsParClasses(G, part);
+            break;
+
+        case 8:
+            if (!tarjan_execute) {
+                printf("\n[!] Veuillez d'abord executer Tarjan (option 3)\n");
+                break;
+            }
+            calculerPeriodes(G, part);
+            break;
+
+        case 9:
+            if (tarjan_execute) {
+                for (int i = 0; i < part.nb_classes; i++) {
+                    free(part.classes[i].vertices);
                 }
-                if (!links.data || links.size == 0) {
-                    initLinkArray(&links, 10);
-                    buildClassLinks(G, part, &links);
-                }
-                analyserCaracteristiques(part, links);
-                break;
+                free(part.classes);
+                if (links.data) freeLinkArray(&links);
+            }
+            toutExecuter(G);
+            tarjan_execute = 0;
+            part.classes = NULL;
+            part.nb_classes = 0;
+            links.data = NULL;
+            break;
 
-            case 6:
-                calculerPuissancesMatrice(G);
-                break;
+        case 0:
+            printf("\nAu revoir !\n");
+            break;
 
-            case 7:
-                if (!tarjan_execute) {
-                    printf("\n[!] Veuillez d'abord executer Tarjan (option 3)\n");
-                    break;
-                }
-                calculerDistributionsParClasses(G, part);
-                break;
-
-            case 8:
-                if (!tarjan_execute) {
-                    printf("\n[!] Veuillez d'abord executer Tarjan (option 3)\n");
-                    break;
-                }
-                calculerPeriodes(G, part);
-                break;
-
-            case 9:
-                if (tarjan_execute) {
-                    for (int i = 0; i < part.nb_classes; i++) {
-                        free(part.classes[i].vertices);
-                    }
-                    free(part.classes);
-                    if (links.data) freeLinkArray(&links);
-                }
-                toutExecuter(G);
-                tarjan_execute = 0;
-                links.data = NULL;
-                break;
-
-            case 0:
-                printf("\nAu revoir !\n");
-                break;
-
-            default:
-                printf("\n[!] Choix invalide\n");
-        }
-    } while (choix != 0);
-
-    // Libération mémoire
-    if (tarjan_execute) {
-        for (int i = 0; i < part.nb_classes; i++) {
-            free(part.classes[i].vertices);
-        }
-        free(part.classes);
+        default:
+            printf("\n[!] Choix invalide\n");
     }
-    if (links.data) freeLinkArray(&links);
+} while (choix != 0);
 
-    for (int i = 0; i < G.taille; i++) {
-        Cell *c = G.tab[i].head;
-        while (c) {
-            Cell *tmp = c;
-            c = c->next;
-            free(tmp);
-        }
+if (tarjan_execute) {
+    for (int i = 0; i < part.nb_classes; i++) {
+        free(part.classes[i].vertices);
     }
-    free(G.tab);
+    free(part.classes);
+}
+if (links.data) freeLinkArray(&links);
 
-    return 0;
+for (int i = 0; i < G.taille; i++) {
+    Cell *c = G.tab[i].head;
+    while (c) {
+        Cell *tmp = c;
+        c = c->next;
+        free(tmp);
+    }
+}
+free(G.tab);
+
+return 0;
 }
