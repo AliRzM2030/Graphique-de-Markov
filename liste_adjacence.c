@@ -181,12 +181,12 @@ void ExportMermaid(List_adj G, const char *filename) {
         exit(EXIT_FAILURE);
     }
 
-    // En-tête selon le format du projet
+    // En-tête EXACT selon le projet (4 espaces d'indentation)
     fprintf(f, "---\n");
     fprintf(f, "config:\n");
-    fprintf(f, "  layout: elk\n");
-    fprintf(f, "  theme: neo\n");
-    fprintf(f, "  look: neo\n");
+    fprintf(f, "    layout: elk\n");
+    fprintf(f, "    theme: neo\n");
+    fprintf(f, "    look: neo\n");
     fprintf(f, "---\n");
     fprintf(f, "flowchart LR\n");
 
@@ -194,6 +194,9 @@ void ExportMermaid(List_adj G, const char *filename) {
     for (int i = 0; i < G.taille; i++) {
         fprintf(f, "%s((%d))\n", getId(i+1), i+1);
     }
+
+    // Ligne vide avant les arêtes
+    fprintf(f, "\n");
 
     // Déclaration des arêtes
     for (int i = 0; i < G.taille; i++) {
@@ -207,5 +210,6 @@ void ExportMermaid(List_adj G, const char *filename) {
         }
     }
 
+    fflush(f);  // AJOUT : Force l'écriture
     fclose(f);
 }

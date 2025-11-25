@@ -76,12 +76,13 @@ void exportHasseToMermaid(const char *filename, t_partition part, t_link_array *
         perror("Impossible de créer le fichier Mermaid");
         return;
     }
+
     // En-tête Mermaid
     fprintf(f, "---\n");
     fprintf(f, "config:\n");
-    fprintf(f, "  layout: elk\n");
-    fprintf(f, "  theme: neo\n");
-    fprintf(f, "  look: neo\n");
+    fprintf(f, "    layout: elk\n");
+    fprintf(f, "    theme: neo\n");
+    fprintf(f, "    look: neo\n");
     fprintf(f, "---\n");
     fprintf(f, "graph TD\n");
 
@@ -96,12 +97,16 @@ void exportHasseToMermaid(const char *filename, t_partition part, t_link_array *
         fprintf(f, "}\"]\n");
     }
 
+    // Ligne vide
+    fprintf(f, "\n");
+
     // Liens entre classes
     for (int i = 0; i < links->size; i++) {
-        fprintf(f, "    C%d --> C%d\n",
-                links->data[i].from + 1,
-                links->data[i].to + 1);
+        fprintf(f, "    %s --> %s\n",
+                part.classes[links->data[i].from].name,
+                part.classes[links->data[i].to].name);
     }
 
+    fflush(f);  // AJOUT : Force l'écriture
     fclose(f);
 }
