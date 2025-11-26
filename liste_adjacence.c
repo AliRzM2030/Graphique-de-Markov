@@ -134,8 +134,11 @@ void Markov(List_adj adj) {
 // -------------------------------
 // getId : A, B, C, ... AA, AB...
 // -------------------------------
-char* getId(int num) {
-    static char buf[10];
+char* getId(int num)
+{
+    char *buf = malloc(10);
+    if (!buf) return NULL;
+
     int index = 0;
     int n = num;
 
@@ -146,11 +149,13 @@ char* getId(int num) {
     }
     buf[index] = '\0';
 
-    for (int i = 0; i < index/2; i++) {
+    // reverse
+    for (int i = 0; i < index / 2; i++) {
         char tmp = buf[i];
         buf[i] = buf[index - i - 1];
         buf[index - i - 1] = tmp;
     }
+
     return buf;
 }
 
@@ -179,7 +184,7 @@ void ExportMermaid(List_adj G, const char *filename) {
         Cell *c = G.tab[i].head;
         while(c){
             fprintf(f, "%s -->|%.2f| %s\n",
-                    getId(i+1),
+                    getId(i + 1),
                     c->probabilite,
                     getId(c->sommet_d_arrive));
             c = c->next;
