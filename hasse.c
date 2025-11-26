@@ -49,26 +49,27 @@ int* buildVertexClassArray(t_partition part, int nb_vertices) {
 }
 void buildClassLinks(List_adj G, t_partition part, t_link_array *links) {
     int *class_of = buildVertexClassArray(part, G.taille);
+
     for (int i = 0; i < G.taille; i++) {
         int Ci = class_of[i];
         Cell *c = G.tab[i].head;
 
         while (c != NULL) {
-            int j = c->sommet_d_arrive - 1;  // CORRECTION: base 1 → base 0
-
+            int j = c->sommet_d_arrive - 1;
             if (j >= 0 && j < G.taille) {
                 int Cj = class_of[j];
 
-                if (Ci != Cj && !linkExists(links, Ci, Cj)) {
-                    addLink(links, Ci, Cj);
+                // Ajoute un lien si les classes sont DIFFERENTES
+                if (Ci != Cj) {
+                    addLink(links, Ci, Cj);  // ⚠ pas besoin de vérifier linkExists ici
                 }
             }
             c = c->next;
         }
     }
-
     free(class_of);
 }
+
 /* CORRECTION: Export Mermaid pour Hasse */
 void exportHasseToMermaid(const char *filename, t_partition part, t_link_array *links) {
     FILE *f = fopen(filename, "w");
